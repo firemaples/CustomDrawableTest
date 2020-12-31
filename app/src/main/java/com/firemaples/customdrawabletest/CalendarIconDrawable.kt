@@ -1,9 +1,7 @@
 package com.firemaples.customdrawabletest
 
-import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.Drawable
-import android.util.TypedValue
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -15,20 +13,20 @@ class CalendarIconDrawable(
 ) : Drawable() {
 
     private companion object {
-        private const val HEIGHT_SCALE = 35f
+        private const val HEIGHT_SCALE = 26f
         private const val WIDTH_SCALE = 24f
-        private const val DAY_TEXT_SIZE = 14f
+
+        private const val DIVIDER_HEIGHT = 1f
+        private const val DIVIDER_VERTICAL_MARGIN = 0.5f
+
+        private const val DAY_TEXT_SIZE = 16f
+
         private const val MONTH_BOUND_HEIGHT = 10f
-        private const val MONTH_TEXT_SIZE = 7f
+        private const val MONTH_TEXT_SIZE = 8f
         private const val DIVIDER_ALPHA = 0.5f
     }
 
     private val monthFormat: SimpleDateFormat by lazy { SimpleDateFormat("MMM", locale) }
-
-//    private val dividerHeight: Float = dpToPx(context, 1)
-//    private val dayTextSize: Float = dpToPx(context, DAY_TEXT_SIZE)
-//    private val monthBoundHeight: Float = dpToPx(context, 12)
-//    private val monthTextSize: Float = dpToPx(context, 8)
 
     private val dividerPaint: Paint = Paint().apply {
         color = (foregroundColor and 0x00ffffff) or ((255f * DIVIDER_ALPHA).toInt() shl 24)
@@ -37,10 +35,12 @@ class CalendarIconDrawable(
     private val dayPaint: Paint = Paint().apply {
         color = foregroundColor
         isAntiAlias = true
+        typeface = Typeface.DEFAULT_BOLD
     }
     private val monthPaint: Paint = Paint().apply {
         color = foregroundColor
         isAntiAlias = true
+        typeface = Typeface.DEFAULT_BOLD
     }
 
     private val dayText: String
@@ -55,7 +55,34 @@ class CalendarIconDrawable(
         }
 
     override fun draw(canvas: Canvas) {
-        drawRelated(canvas)
+        drawVerticalStack(canvas)
+
+//        drawRelated(canvas)
+    }
+
+    private fun drawVerticalStack(canvas: Canvas) {
+        val width: Int = bounds.width()
+        val height: Int = bounds.height()
+
+        // Draw day
+        val dayTextSize = height.toFloat() * DAY_TEXT_SIZE / HEIGHT_SCALE
+        val dayBounds = Rect(0, 0, width, dayTextSize.toInt())
+        dayPaint.textSize = dayTextSize
+        canvas.drawTextCentered(dayText, dayPaint, dayBounds)
+
+        // Draw divider
+        val dividerHeight = height.toFloat() * DIVIDER_HEIGHT / HEIGHT_SCALE
+        val dividerVerticalMargin = height.toFloat() * DIVIDER_VERTICAL_MARGIN / HEIGHT_SCALE
+        val dividerTop = dayBounds.bottom + dividerVerticalMargin
+        dividerPaint.strokeWidth = dividerHeight
+        canvas.drawLine(0f, dividerTop, width.toFloat(), dividerTop, dividerPaint)
+
+        // Draw month
+        val monthTextSize = height.toFloat() * MONTH_TEXT_SIZE / HEIGHT_SCALE
+        val monthTop = dividerTop + dividerHeight + dividerVerticalMargin
+        val monthBounds = Rect(0, monthTop.toInt(), width, (monthTop + monthTextSize).toInt())
+        monthPaint.textSize = monthTextSize
+        canvas.drawTextCentered(monthText, monthPaint, monthBounds)
     }
 
     private fun drawRelated(canvas: Canvas) {
@@ -63,7 +90,7 @@ class CalendarIconDrawable(
         val height: Int = bounds.height()
 
         // Draw divider
-        val dividerHeight = height.toFloat() * 1 / HEIGHT_SCALE
+        val dividerHeight = height.toFloat() * DIVIDER_HEIGHT / HEIGHT_SCALE
         val lineMarginTop = height / 2f - dividerHeight / 2
         dividerPaint.strokeWidth = dividerHeight
         canvas.drawLine(0f, lineMarginTop, width.toFloat(), lineMarginTop, dividerPaint)
@@ -91,12 +118,6 @@ class CalendarIconDrawable(
     }
 
     override fun getOpacity(): Int = PixelFormat.OPAQUE
-
-//    private fun dpToPx(context: Context, dp: Int) = TypedValue.applyDimension(
-//        TypedValue.COMPLEX_UNIT_DIP,
-//        dp.toFloat(),
-//        context.resources.displayMetrics
-//    )
 
     private fun Canvas.drawTextCentered(text: String, paint: Paint, rect: Rect) {
         val textBounds = Rect()
